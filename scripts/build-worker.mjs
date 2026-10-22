@@ -1,0 +1,16 @@
+import { readFile, writeFile, mkdir } from 'node:fs/promises';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+const root = fileURLToPath(new URL('..', import.meta.url));
+const output = path.resolve(process.argv[2] || path.join(root, 'artifacts/worker/index.js'));
+const files = ['index.html', 'styles.css', 'app.js', 'engine.js', 'fixtures.js', 'instructions.js'];
+const mime = { html: 'text/html; charset=utf-8', css: 'text/css; charset=utf-8', js: 'text/javascript; charset=utf-8' };
+const assets = {};
+for (const file of files) assets['/' + file] = { type: mime[file.split('.').at(-1)], body: await readFile(path.join(root, 'dist', file), 'utf8') };
+assets['/'] = assets['/index.html'];
+const stripImports = source => source.replace(/^import .*;\n/gm, '');
+const sources = await Promise.all(['dist/fixtures.js', 'dist/engine.js', 'server/qloo.mjs', 'server/worker-handler.mjs'].map(async file => stripImports(await readFile(path.join(root, file), 'utf8'))));
+const worker = `${sources.join('\n')}\nconst ASSETS=${JSON.stringify(assets)};\nconst handle=createWorkerHandler({assets:ASSETS,QlooClient,AppError});\nexport default {fetch:handle};\n`;
+await mkdir(path.dirname(output), { recursive: true });
+await writeFile(output, worker);
+console.log('Built standalone Worker:', output);

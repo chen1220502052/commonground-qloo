@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#142c4a">
+  <meta name="description" content="Group dining negotiation powered by Qloo: individual tastes, shared boundaries, explainable tradeoffs.">
+  <title>CommonGround · A table for everyone</title>
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%23142c4a'/%3E%3Ccircle cx='12' cy='16' r='8' fill='none' stroke='%23ffffff' stroke-width='3'/%3E%3Ccircle cx='21' cy='16' r='8' fill='none' stroke='%239fe1ff' stroke-width='3'/%3E%3C/svg%3E">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="masthead">
+    <a href="./" class="brand" aria-label="CommonGround home"><span class="brand-mark" aria-hidden="true"><i></i><i></i></span>CommonGround<span class="brand-note">A table for everyone</span></a>
+    <div class="header-actions"><label class="mode-label">Data<select id="data-mode" aria-label="Data source"><option value="qloo" disabled>Live Qloo</option><option value="demo" selected>Demo data</option></select></label><span id="source-badge" class="demo-badge">Illustrative demo</span><button id="reset" class="text-button">Reset group</button></div>
+  </header>
+  <main>
+    <div class="intro"><div><p class="eyebrow">THE GROUP DECISION ROOM</p><h1>Different tastes. One shared table.</h1><p class="intro-copy">Keep every taste in the conversation. Find a place together, and replan when someone objects.</p></div><div class="city-label"><span>YOUR NEXT GET-TOGETHER</span><strong>New York City</strong><small id="city-note">Illustrative city and fictional venues</small></div></div>
+    <div id="source-note" class="prototype-note"><strong>Group negotiation, grounded in taste</strong><span>Choose live Qloo data for real venues, or explore with clearly labeled fictional examples.</span></div>
+    <section class="how-it-works" aria-label="How CommonGround works"><span><b>01</b> Share individual tastes</span><span><b>02</b> Compare real Qloo places</span><span><b>03</b> Negotiate & agree</span></section>
+    <div class="workspace">
+      <aside class="setup-panel" aria-label="Group setup">
+        <div class="section-heading"><span class="step">01</span><div><h2>Who’s coming?</h2><p>Two things each person loves.</p></div><span id="member-count" class="count"></span></div>
+        <div id="members"></div>
+        <button id="add-member" class="add-button">+ Add a person</button>
+        <div class="constraints"><h3>Shared boundaries</h3><p id="distance-note" class="muted">Distances use one illustrative meeting point.</p><div id="constraints"></div></div>
+        <button id="negotiate" class="primary-button">Find common ground</button>
+        <p class="setup-footnote">Respect boundaries first. Compare taste second.</p>
+      </aside>
+      <section class="decision-panel" aria-label="Negotiation results">
+        <div class="section-heading result-heading"><span class="step">02</span><div><h2>Your common ground</h2><p id="result-summary"></p></div><span id="round-badge" class="round-badge"></span></div>
+        <div id="stale-banner" class="stale-banner" hidden>Settings changed. These are previous results; generate again before giving feedback.</div>
+        <div id="request-status" class="request-status" role="status" hidden>Consulting Qloo: resolving tastes, gathering venues, and comparing the same candidates for every person. A first request can take 20–60 seconds.</div>
+        <div id="request-error" class="stale-banner" role="alert" hidden></div>
+        <div id="results" aria-live="polite"></div>
+        <section id="tradeoff" class="tradeoff-panel" hidden aria-label="Ranking tradeoff"></section>
+        <section id="agreement" class="agreement-panel" hidden><h3 id="agreement-title"></h3><p id="agreement-copy" class="muted"></p><div id="agreement-votes"></div></section>
+        <section class="instruction-panel"><div class="section-heading"><span class="step">↻</span><div><h2>Tell the room what needs to change</h2><p>Bounded commands, with a preview before anything changes.</p></div></div><form id="instruction-form"><label class="field" for="instruction-text">Try <code>Alex: no bars; Sam: closer</code></label><textarea id="instruction-text" maxlength="500" rows="2" placeholder="Alex: no bars; Sam: closer" aria-describedby="command-help"></textarea><p id="command-help" class="muted small">Commands: no bars · closer · cheaper · reject 1. Use exact member names, and semicolons between commands. A rule-based parser is used; no language model is connected.</p><button id="instruction-submit" class="object-button" type="submit">Preview changes</button></form><div id="instruction-preview" class="stale-banner" hidden><p id="instruction-diff"></p><button id="instruction-apply" class="primary-button" type="button">Apply these changes & replan</button></div></section>
+        <div class="lower-grid">
+          <section class="feedback-panel"><div class="section-heading"><span class="step">03</span><div><h2>Not quite right?</h2><p>Keep the good parts. Change what matters.</p></div></div><form id="feedback-form"><div id="feedback-fields"></div><button class="primary-button feedback-button" type="submit">Apply feedback & replan</button><button type="button" id="undo" class="text-button undo-button" hidden>Undo last feedback</button></form><p class="muted small">Feedback uses explicit, reversible rules. No language model is connected.</p></section>
+          <section class="trace-panel"><div class="trace-heading"><h2>The conversation</h2><span>Every change has a reason</span></div><ol id="trace"></ol></section>
+        </div>
+        <details class="audit"><summary id="audit-summary">Inspect candidate filtering</summary><div id="audit-content"></div></details>
+      </section>
+    </div>
+    <footer><span>CommonGround · Qloo Agentic Hackathon 2026 · <a href="https://github.com/chen1220502052/commonground-qloo" target="_blank" rel="noopener">Source & methodology</a></span><span>Your tastes. Your boundaries. Your decision.</span></footer>
+  </main>
+  <div id="toast" role="status" class="toast" hidden></div>
+  <script type="module" src="app.js"></script>
+</body>
+</html>
