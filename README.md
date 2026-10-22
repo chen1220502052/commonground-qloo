@@ -9,7 +9,7 @@ CommonGround is a Qloo-powered group dining negotiation tool for 2–4 people. I
 - [Submission description](docs/submission.md)
 - [MIT license](LICENSE)
 
-The hosted URL is the intended deployment address. See the deployment result for confirmed publication status.
+The Sites platform confirmed public deployment on 2026-10-22. Direct verification from the authoring network was blocked upstream by Cloudflare (403); production browser behavior remains unverified from that network. See [delivery status](docs/delivery-status.md).
 
 ## What works
 

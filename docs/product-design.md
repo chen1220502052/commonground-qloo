@@ -1,83 +1,41 @@
-# CommonGround 第一版产品设计
+# Product design: CommonGround
 
-CommonGround 面向 2–4 位朋友，帮助他们在同一城市选择聚餐地点。每位成员保留自己的品味和拒绝条件，系统比较候选、解释取舍，并在收到异议后重新协商。第一版以一次聚餐选址为范围，最终选择由成员确认。
+## Audience and scope
 
-2026 年 10 月 9 日已加入服务端 Qloo 接口。真实模式分别识别成员的电影、音乐和品牌偏好，汇集各人的候选地点，再针对同一批实体查询逐人关联。真实分数采用共同完整候选集合中的中位排序百分位，原始关联值及可用贡献解释可以展开查看。集合变化会改变百分位，不能将不同轮次的数字直接当作满意度变化。
+A shared-screen decision room for 2–4 friends choosing a meal near Union Square, New York. Each person keeps an individual taste profile, personal type exclusions and explicit venue vetoes. The group shares neighborhood, distance and price boundaries.
 
-## 第一版范围
+The shipped interface is English. Live Qloo data and authored demo fixtures are separate modes. The app is a bounded negotiation tool; no language model, reservations, user accounts, persistence or multi-device voting are implemented.
 
-用户可以添加或移除成员、修改个人品味、设置共同区域和距离及价格档位、比较最多三套不同方案、拒绝具体地点或避开酒吧、缩短距离或降低价格，并查看每轮变化的原因。条件冲突时，系统展示无结果和可调整的条件。
+## Workflow
 
-当前应用提供真实 Qloo 和示例数据两种模式。示例模式使用中文界面、纽约演示场景、10 个虚构地点及预设关联分数。模型尚未接入，反馈通过明确选项表达。它用于验证交互和协商规则，不能代表 Qloo 的推荐质量、纽约的数据覆盖或地点的营业信息。价格是相对档位，不是费用报价；距离是固定集合点到地点的示例距离，不是路线或通勤时间。
+1. Collect individual taste signals and shared boundaries.
+2. Resolve exact Qloo entities by name and type, using previously verified IDs only to disambiguate curated choices.
+3. Retrieve candidates separately per member, union by entity ID and remove inconsistent records.
+4. Apply hard constraints and existing vetoes before scoring.
+5. Score identical candidate IDs for each member. Remove incomplete rows and compute each member's midrank percentiles in the remaining common pool.
+6. Rank a balanced option by minimum member percentile, then mean. Offer distinct average-first and optional discovery alternatives.
+7. Show the actual average-only winner to make tradeoffs inspectable, including when it agrees with the balanced choice.
+8. Preview explicit multi-person commands or accept structured feedback, requery Qloo and commit settings only after success. Undo is another successful-query transaction.
+9. Record each member's explicit agreement on the leading option. Clear all old agreement on a new successful round or input edit.
 
-## 页面流程
+## Boundaries and evidence
 
-| 步骤 | 用户操作 | 系统结果 |
-| --- | --- | --- |
-| 填写聚会信息 | 为 2–4 人设置姓名和各自两个品味偏好，选择共同限制 | 展示输入；任何修改都将此前结果标为待更新 |
-| 生成方案 | 点击生成 | 先筛选，再展示逐人匹配、最低分、平均分和取舍 |
-| 表达异议 | 指定成员、异议类型及目标地点 | 保留其他输入，应用新的限制并重新协商 |
-| 比较变化 | 查看新方案和协商记录 | 显示共同选择是否改变、哪些候选被排除 |
-| 确认或继续调整 | 在真实产品中确认方案；原型支持继续调整及撤销 | 确认功能将在真实数据联调后加入 |
+Hard constraints are never relaxed automatically. Missing prices, coordinates or scores and inconsistent entity names are excluded. Missing explanatory contributions are acknowledged. Raw affinities remain visible. Percentiles do not estimate satisfaction, and ranks from different candidate pools must not be treated as longitudinal improvement.
 
-所有反馈产生的限制都对整个群组的可选地点生效。比如一个人避开酒吧，任何方案都不应再选酒吧。降低价格或缩短距离会更改共同上限，并在记录中明确说明。输入被手动修改后，需要重新生成结果，避免把新的异议应用到过时方案上。
+Commands are exact, case-insensitive rules: `Name: no bars`, `Name: closer`, `Name: cheaper`, `Name: reject 1`. Semicolons combine up to eight commands. All clauses must parse before a preview is accepted. Duplicate member names, unsupported text, invalid options and below-minimum constraints fail without mutation.
 
-## 输入和输出
+Agreement is a shared-screen record entered with the person present. It is not inferred consent, authenticated voting or a booking.
 
-| 对象 | 字段 | 含义 |
-| --- | --- | --- |
-| 成员 | 稳定 ID、显示名、偏好实体、排除类型、拒绝地点 ID | 显示名用于界面，不作为品味推断信号 |
-| 共同限制 | 城市或区域、集合点、最远距离、最高价格档位 | 不允许排序步骤擅自突破 |
-| 候选地点 | 实体 ID、名称、类型、位置、价格档位、逐人关联依据 | 原型为虚构数据；真实版本须保留来源及缺失状态 |
-| 方案 | 策略、地点、逐人匹配、最低匹配、平均匹配、取舍 | 匹配是关联信号，不是用户满意概率 |
-| 异议 | 成员 ID、反馈类型、目标地点 ID | 一次应用一个明确修改，随后重新筛选 |
-| 协商记录 | 轮次、触发原因、方案变化、候选数量 | 解释每次调整，不冒充模型推理过程 |
+## Deployment architecture
 
-## 协商规则
+The local Node server exposes an explicit asset allowlist and JSON API. A dependency-free build embeds those same assets and the Qloo client into a standalone ESM Worker. Qloo credentials are configured as hosted runtime secrets and never included in source or browser assets. Public endpoints enforce content type, body size and same-origin checks. Queuing, caching, coalescing, a bounded rate-limit retry and an in-memory public cooldown reduce redundant requests. The cooldown is not a durable global quota mechanism.
 
-先排除不满足区域、距离、价格、类型限制或已被成员拒绝的地点。任何人的关联依据缺失时，候选无法参与公平比较，必须标明缺失，不能把缺失当作低分或填入推测值。
+## Verification
 
-对合格候选，兼顾所有人方案先比较最低成员分，再比较平均分，最后用距离和稳定 ID 解决并列。整体匹配方案从剩余地点中选平均分最高者。探索方案从再次剩余的地点中，选择热度较低且所有成员示例分不低于 60 的地点。没有足够的合格候选时，显示较少方案，不重复包装同一地点，也不自动放宽限制。
+The automated suite exercises group scoring, ties, missing data, hard constraints, vetoes, command preview and undo, state preservation after failures, explicit agreement invalidation and local/hosted request boundaries. On 2026-10-22 the standalone Worker called the real Qloo hackathon API and returned 36 candidates in about 17 seconds for the default group. These are implementation checks, not a user study.
 
-这些是可解释的初始规则。示例中的关联值处于统一的预设标尺；真实模式分别按成员将原始关联值转换成共同候选中的排序百分位，以避免把不同查询的原始关联标尺直接混用。百分位采用并列中位秩；全部并列或仅一个候选时为 50。跨轮次和候选集合的分数不能直接比较，探索阈值及方案接受度还需真实用户验证。不能把原型里的 0–100 分直接映射成真实满意程度。
+The Sites platform confirmed public deployment on 2026-10-22. Direct anonymous access from the authoring network received an upstream Cloudflare 403, so production browser behavior has not yet been independently verified. Browser automation for Devpost also timed out. See the delivery status for the current submission state.
 
-## 四人演示场景
+## Next work
 
-小林偏好 The Grand Budapest Hotel 和 Miles Davis，阿澄偏好 Spirited Away 和 MUJI，晓雨偏好 Taylor Swift 和 Nike，宇辰偏好 Christopher Nolan 和 Patagonia。这些名称仅作为用户输入的例子，预设分数不构成它们与地点的真实文化关联。
-
-初始共同限制为全部演示区域、5 km、最高三档价格。兼顾所有人方案选择 Juniper Table；整体平均更高的 Cinema Supper 作为另一种取舍；Side B Kitchen 是探索选项。晓雨拒绝 Juniper Table 后，该地点必须从所有策略中移除，并产生新一轮结果。她再提出降低价格时，共同价格上限从三档降到两档，Cinema Supper 也必须被排除。撤销操作应恢复上一条异议之前的条件。
-
-另一条演示路径将区域设为 Chelsea、距离设为 1 km、价格设为一档。系统应显示没有共同选择，提供调整条件的建议，并等待用户决定。
-
-## Qloo 与模型分工
-
-Qloo 提供实体解析、跨领域关联推荐、候选地点筛选和可用的推荐解释。CommonGround 负责保留逐人输入、构建同一候选集合、处理拒绝、比较群组取舍和维护协商记录。模型负责把自然语言需求转换为结构化意图、在允许的工具范围内提出查询，以及依据已有证据解释方案。限制检查和最终排序不由模型自由改写。
-
-官方文档描述了指定候选实体的关联查询、地点及距离筛选、餐厅价格档位、类型标签排除和推荐解释。当前比赛密钥已验证实体查找、地点推荐、同一候选集合逐人关联查询及贡献解释。其余功能权限及更广的数据覆盖仍需按使用场景验证。解释不可用时，应回退到真实存在的匹配依据，不能补写“因为你喜欢某电影，所以你一定喜欢该餐厅”等未经支持的关系。
-
-## 接入验证和验收
-
-| 阶段 | 必须证明的结果 |
-| --- | --- |
-| 原型 | 完成四人选址和异议重规划；拒绝不会遗漏；条件冲突不产生虚构方案；手机界面可操作 |
-| Qloo 联调 | 比赛密钥有效；输入能解析；选定城市有足够候选；同一候选可获得逐人关联依据；权限及限流清楚 |
-| 模型联调 | 自然语言能形成可审查的结构化意图；不满足条件的地点不能被模型恢复；失败有明确提示 |
-| 推荐评估 | 同一组需求下比较群组规则、合并偏好和模型单独推荐；检查限制违反、拒绝处理和成员接受度 |
-| 比赛交付 | 英文材料、可公开试用的真实应用、公开完整源码及开源许可证；实际功能与描述一致 |
-
-真实地点的营业时间、可预订状态、具体餐费及饮食适配需要可靠来源支持。未验证的信息应明确显示待确认。模型和 Qloo 密钥仅存放在服务端；当前原型不保存个人输入，刷新即恢复示例。
-
-## 官方资料
-
-- [比赛要求和提交清单](https://qloo.devpost.com/)
-- [比赛规则和评分标准](https://qloo.devpost.com/rules)
-- [Qloo API 总览](https://github.com/qloo/docs-public/blob/main/reference/api-overview.md)
-- [Qloo Insights 参数和推荐解释](https://github.com/qloo/docs-public/blob/main/reference/insights-api-deep-dive.md)
-
-本设计中的群组排序、反馈流程及评测方案属于 CommonGround 的产品选择，官方资料仅支持对应的比赛要求和 API 能力。
-
-## 当前联调结果
-
-2026 年 10 月 9 日，四人默认场景产生 36 个共同候选，选出 Katz’s Delicatessen 和 Da Marino NYC 两种不同取舍。真实浏览器中的成员拒绝操作成功排除首选地点并产生下一轮结果。15 项单元测试通过，并检查了异步失败恢复、模式切换、窄屏布局和密钥隔离。该结果证明数据链路和约束执行可用，不代表推荐已经达到用户满意度目标。
-
-为避免工作室名称被识别成同名音乐实体，电影偏好现使用可准确解析的 The Grand Budapest Hotel 和 Spirited Away；Christopher Nolan 等目录项在出现同名同类型候选时，使用已核对的 Qloo 实体 ID 消歧。
+Real-group studies, optional language-model intent parsing using the same validated feedback actions, flexible meeting points, wider entity selection and remote consent. No measured user benefits are claimed before those studies exist.
