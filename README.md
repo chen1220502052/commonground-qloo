@@ -9,7 +9,7 @@ CommonGround is a Qloo-powered group dining negotiation tool for 2–4 people. I
 - [Submission description](docs/submission.md)
 - [MIT license](LICENSE)
 
-The Sites platform confirmed public deployment on 2026-10-22. Direct verification from the authoring network was blocked upstream by Cloudflare (403); production browser behavior remains unverified from that network. See [delivery status](docs/delivery-status.md).
+See [delivery status](docs/delivery-status.md) for the latest deployment and verification record.
 
 ## What works
 
@@ -64,7 +64,8 @@ Missing affinity, price or coordinates, inconsistent entity names, known closure
 - Relative ranks change when the candidate pool changes; do not compare percentiles across rounds.
 - No user-study results or satisfaction improvements are claimed. Tests verify implementation and constraints, not actual enjoyment.
 - Names, preferences, feedback history and shared-screen agreement live in browser memory. There is no account system, persistence or remote voting. The server receives names as part of group state but sends Qloo entity IDs, location and venue filters upstream, not names.
-- Verify venue hours, menus, dietary needs, accessibility and reservations separately. No bookings are made.
+- Verify venue hours, menus, dietary needs, allergies, accessibility and reservations directly with the venue. “Avoid bars” relies on category data and does not guarantee an alcohol-free venue. No bookings are made.
+- Qloo responses may be cached in server memory for up to 10 minutes. Application-computed percentile rankings are heuristics, not satisfaction predictions.
 - The public Worker limits concurrent negotiation and applies an in-memory cooldown. These are best-effort per-isolate protections, not a durable global quota service.
 
 ## Source map

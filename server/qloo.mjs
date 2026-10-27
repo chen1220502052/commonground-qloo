@@ -5,17 +5,6 @@ export const MEETING_POINT = { name: 'Union Square', lat: 40.7359, lon: -73.9903
 const NEIGHBORHOODS = { all: null, 'East Village': 'East Village, New York', SoHo: 'SoHo, New York', Chelsea: 'Chelsea, Manhattan, New York' };
 const UUID = /^[\da-f]{8}-[\da-f]{4}-[\da-f]{4}-[\da-f]{4}-[\da-f]{12}$/i;
 const normalize = value => String(value).normalize('NFKC').trim().toLowerCase();
-// Curated choices verified through the hackathon /search response. Still require
-// an exact name/type match; use these only to disambiguate this fixed catalogue.
-const VERIFIED_ENTITIES = {
-  nolan:'F253F706-4D0B-41A1-88DB-C8C5EC483E98',
-  jazz:'578CFC26-B696-449A-9655-3FB270DDA725',
-  pop:'4BBEF799-A0C4-4110-AB01-39216993C312',
-  indie:'AFBC71A7-9439-4AB0-AB68-D14B11AAF836',
-  outdoor:'DB4CE34E-3A63-4947-946F-9D52502C5762',
-  design:'E12201A5-CC50-40AF-97AE-C54A2CA303F7',
-  street:'C70CE2B8-0AD1-4150-BF18-5A6347F2E860',
-};
 
 export class AppError extends Error {
   constructor(message, status = 502) { super(message); this.status = status; }
@@ -119,7 +108,7 @@ export class QlooClient {
     const data=await this.get('/search',{query:signal.name,take:10});
     const matches=(data.results || []).filter(e=>normalize(e.name)===normalize(signal.name) && e.types?.includes(signal.entityType));
     const unique=[...new Map(matches.map(e=>[e.entity_id,e])).values()];
-    const chosen=unique.length===1?unique[0]:unique.find(e=>e.entity_id===VERIFIED_ENTITIES[signalId]);
+    const chosen=unique.length===1?unique[0]:null;
     if(!chosen) throw new AppError(`Could not unambiguously resolve ${signal.name}. Choose another taste and retry.`,422);
     return { signalId, entityId:chosen.entity_id, name:chosen.name, type:signal.entityType };
   }

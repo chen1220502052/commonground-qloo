@@ -30,6 +30,13 @@ test('search resolves the exact name and type rather than choosing the first mat
   const client=new QlooClient({apiKey:'test-secret',minIntervalMs:0,fetchImpl:async()=>Response.json({results:[{entity_id:uuid(1),name:'Patagonia',types:['urn:entity:locality']},{entity_id:uuid(2),name:'Patagonia',types:['urn:entity:brand']}]})});
   assert.equal((await client.resolveSignal('outdoor')).entityId,uuid(2));
 });
+test('ambiguous exact entity matches fail instead of relying on stored Qloo IDs',async()=>{
+  const client=new QlooClient({apiKey:'test-secret',minIntervalMs:0,fetchImpl:async()=>Response.json({results:[
+    {entity_id:uuid(1),name:'Patagonia',types:['urn:entity:brand']},
+    {entity_id:uuid(2),name:'Patagonia',types:['urn:entity:brand']},
+  ]})});
+  await assert.rejects(()=>client.resolveSignal('outdoor'),/unambiguously resolve/);
+});
 test('429 is retried once, duplicate requests coalesce, and errors never echo upstream secrets',async()=>{
   let calls=0;
   const client=new QlooClient({apiKey:'test-secret',minIntervalMs:0,fetchImpl:async()=>{

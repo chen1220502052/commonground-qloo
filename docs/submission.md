@@ -14,9 +14,9 @@ When someone objects, the workflow previews a bounded change, replans against Ql
 ## How we built it
 A dependency-free JavaScript frontend and Node server implement the local app. A standalone ESM Worker hosts the same frontend and Qloo workflow. API credentials remain server-side.
 
-The Qloo integration resolves exact entity names and types, retrieves candidates per individual, applies hard constraints, and scores the same remaining venue IDs for every member. Requests are queued, coalesced and cached with a bounded retry for rate limits. Available original affinities and taste contributions remain inspectable.
+The workflow resolves unambiguous exact entity names and types through Qloo, retrieves candidates per individual, applies hard constraints, and scores the same remaining venue IDs for every member. It then selects options using explicit heuristics, and automatically reruns the query and ranking after approved feedback. Qloo responses may be cached server-side for up to 10 minutes. Requests are queued, coalesced and cached with a bounded retry for rate limits. Available original affinities and taste contributions remain inspectable.
 
-We normalize each individual's affinities to midrank percentiles in the fully scored shared pool. The balanced strategy maximizes the lowest member percentile, then the mean. An average-only comparison uses that same pool and reports honestly when the rules select the same venue. Percentiles are relative ranks, not predicted satisfaction.
+We normalize each individual's affinities to midrank percentiles in the fully scored shared pool. The balanced strategy maximizes the lowest member percentile, then the mean. An average-only comparison uses that same pool and reports honestly when the rules select the same venue. Percentiles are application-computed heuristic relative ranks, not predicted satisfaction. Venue categories do not guarantee allergy safety or an alcohol-free venue; check directly with the venue.
 
 ## Why Qloo matters
 Our application code has no live mapping from a favorite film or brand to a restaurant. Qloo supplies that cross-domain cultural grounding and the per-person affinity evidence. Removing Qloo removes the live recommendation pipeline; the separately labeled fictional fixtures exist only to demonstrate interface behavior.

@@ -66,10 +66,10 @@ function renderTrace(){
 function render(){ renderMembers(); renderConstraints(); renderResults(); renderFeedback(); renderTrace(); renderSource(); renderAgreement(); renderTradeoff(); for(const id of ['reset','negotiate','data-mode','undo'])$(id).disabled=busy; if(busy) document.querySelectorAll('button,input,select').forEach(el=>el.disabled=true); }
 function renderSource(){
   $('data-mode').value=mode;
-  $('source-badge').textContent=isLive()?'Qloo connected':'Illustrative demo';
+  $('source-badge').textContent=isLive()?'Qloo · live or cached':'Illustrative demo';
   $('city-note').textContent=isLive()?'Meeting point · Union Square':'Illustrative city and fictional venues';
   $('distance-note').textContent=isLive()?'Straight-line distance from Union Square, not walking time.':'Distances use one illustrative meeting point.';
-  $('source-note').innerHTML=isLive()?'<strong>Live Qloo data</strong><span>Individual tastes. One shared candidate pool. Percentiles show relative rank, not predicted satisfaction. Verify hours and menus before visiting.</span>':'<strong>Illustrative demo</strong><span>Fictional venues and authored scores. No Qloo or model requests. Scores do not predict satisfaction.</span>';
+  $('source-note').innerHTML=isLive()?'<strong>Qloo data · live or cached</strong><span>Requests may use a server-side cache for up to 10 minutes. The application-computed heuristic percentiles rank this pool; they do not predict satisfaction. Verify hours, menus, dietary needs and allergies with the venue.</span>':'<strong>Illustrative demo</strong><span>Fictional venues and authored scores. No Qloo or model requests. Scores do not predict satisfaction.</span>';
 }
 function clearDecision(){ votes={};instructionPreview=null;$('instruction-preview').hidden=true; }
 function markDirty(){ userInteracted=true; dirty=true; undoStack=[];clearDecision(); render(); }
