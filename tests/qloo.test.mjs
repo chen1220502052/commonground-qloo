@@ -37,6 +37,35 @@ test('ambiguous exact entity matches fail instead of relying on stored Qloo IDs'
   ]})});
   await assert.rejects(()=>client.resolveSignal('outdoor'),/unambiguously resolve/);
 });
+test('transport preserves the global receiver required by Worker fetch',async()=>{
+  const client=new QlooClient({apiKey:'test-secret',minIntervalMs:0,fetchImpl:async function(){
+    assert.equal(this,globalThis,'Worker native fetch rejects a client object receiver');
+    return Response.json({results:[]});
+  }});
+  assert.deepEqual(await client.get('/search',{query:'x'}),{results:[]});
+});
+test('redirect responses are rejected without forwarding the Qloo credential',async()=>{
+  let calls=0;
+  const client=new QlooClient({apiKey:'test-secret',minIntervalMs:0,fetchImpl:async function(url,options){
+    calls++;assert.equal(options.redirect,'manual');
+    assert.equal(new URL(url).hostname,'hackathon.api.qloo.com');
+    return new Response(null,{status:302,headers:{location:'https://untrusted.example/collect'}});
+  }});
+  await assert.rejects(()=>client.get('/search',{query:'x'}),e=>e.status===502&&!e.message.includes('test-secret'));
+  assert.equal(calls,1);
+});
+test('director ambiguity is resolved from returned role evidence, never a hardcoded ID',async()=>{
+  const results=[
+    {entity_id:uuid(1),name:'Christopher Nolan',types:['urn:entity:person'],properties:{short_description:'Irish poet and author (1965-2009)'}},
+    {entity_id:uuid(2),name:'Christopher Nolan',types:['urn:entity:person'],properties:{short_description:'British-American filmmaker (born 1970)'}},
+    {entity_id:uuid(3),name:'Christopher Nolan',types:['urn:entity:person'],properties:{short_description:'researcher'}},
+  ];
+  const client=new QlooClient({apiKey:'test-secret',minIntervalMs:0,fetchImpl:async()=>Response.json({results})});
+  assert.equal((await client.resolveSignal('nolan')).entityId,uuid(2));
+  results.push({...results[1],entity_id:uuid(4)});
+  const ambiguous=new QlooClient({apiKey:'test-secret',minIntervalMs:0,fetchImpl:async()=>Response.json({results})});
+  await assert.rejects(()=>ambiguous.resolveSignal('nolan'),e=>e.status===422);
+});
 test('429 is retried once, duplicate requests coalesce, and errors never echo upstream secrets',async()=>{
   let calls=0;
   const client=new QlooClient({apiKey:'test-secret',minIntervalMs:0,fetchImpl:async()=>{

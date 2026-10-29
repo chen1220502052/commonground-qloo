@@ -9,7 +9,7 @@ CommonGround is a Qloo-powered group dining negotiation tool for 2–4 people. I
 - [Submission description](docs/submission.md)
 - [MIT license](LICENSE)
 
-See [delivery status](docs/delivery-status.md) for the latest deployment and verification record.
+The public application was verified in Chrome on 2026-10-29 after repairing Worker transport compatibility. CommonGround has been submitted to the Qloo Agentic Hackathon: [Devpost project](https://devpost.com/software/commonground-krumqw). See [delivery status](docs/delivery-status.md).
 
 ## What works
 

@@ -34,7 +34,7 @@ The local Node server exposes an explicit asset allowlist and JSON API. A depend
 
 The automated suite exercises group scoring, ties, missing data, hard constraints, vetoes, command preview and undo, state preservation after failures, explicit agreement invalidation and local/hosted request boundaries. On 2026-10-22 the standalone Worker called the real Qloo hackathon API and returned 36 candidates in about 17 seconds for the default group. These are implementation checks, not a user study.
 
-The Sites platform confirmed public deployment on 2026-10-22. Direct anonymous access from the authoring network received an upstream Cloudflare 403, so production browser behavior has not yet been independently verified. Browser automation for Devpost also timed out. See the delivery status for the current submission state.
+Public Chrome verification succeeded on 2026-10-29 after repairing Worker fetch receiver and redirect-mode compatibility, isolating request-bound client queues, and disambiguating the director signal from returned role evidence. The live default flow returned 36 candidates, and the second request also completed. CommonGround has been submitted on Devpost. See the delivery status for the submission link and validation limits.
 
 ## Next work
 

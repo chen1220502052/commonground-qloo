@@ -69,7 +69,7 @@ export class QlooClient {
         const pause=Math.max(0,this.minIntervalMs-(Date.now()-this.lastStarted));
         if(pause)await new Promise(resolve=>setTimeout(resolve,pause));
         this.lastStarted=Date.now();
-        const response=await this.fetchImpl(url,{headers:{'X-Api-Key':this.apiKey},signal:AbortSignal.timeout(25000),redirect:'error'});
+        const response=await this.fetchImpl.call(globalThis,url,{headers:{'X-Api-Key':this.apiKey},signal:AbortSignal.timeout(25000),redirect:'manual'});
         if(response.status!==429 || attempt===1)return response;
         const retryAfter=response.headers.get('retry-after');
         const delay=retryAfter && /^\d+$/.test(retryAfter)?Number(retryAfter)*1000:2000;
@@ -90,7 +90,7 @@ export class QlooClient {
     const request=(async()=>{
       let response;
       try { response=await this.request(`${this.baseUrl}${key}`); }
-      catch { throw new AppError('Qloo timed out or could not be reached. Please retry.',504); }
+      catch (error) { const message=String(error?.message || '').replaceAll(this.apiKey,'[redacted]').slice(0,180); console.error('Qloo transport failure',JSON.stringify({path,name:error?.name || 'Error',message})); throw new AppError('Qloo timed out or could not be reached. Please retry.',504); }
       if(!response.ok) {
         const messages={401:'Qloo authentication failed. Check server configuration.',403:'The hackathon account cannot access this endpoint.',429:'Qloo rate limit reached. Please retry shortly.',400:'Qloo rejected the query parameters.'};
         throw new AppError(messages[response.status] || 'Qloo is temporarily unavailable. Please retry.',response.status===429?429:502);
@@ -108,7 +108,8 @@ export class QlooClient {
     const data=await this.get('/search',{query:signal.name,take:10});
     const matches=(data.results || []).filter(e=>normalize(e.name)===normalize(signal.name) && e.types?.includes(signal.entityType));
     const unique=[...new Map(matches.map(e=>[e.entity_id,e])).values()];
-    const chosen=unique.length===1?unique[0]:null;
+    const roleMatches=signal.domain==='Director'?unique.filter(e=>/\b(filmmaker|film director)\b/i.test(e.properties?.short_description || '')):[];
+    const chosen=unique.length===1?unique[0]:roleMatches.length===1?roleMatches[0]:null;
     if(!chosen) throw new AppError(`Could not unambiguously resolve ${signal.name}. Choose another taste and retry.`,422);
     return { signalId, entityId:chosen.entity_id, name:chosen.name, type:signal.entityType };
   }

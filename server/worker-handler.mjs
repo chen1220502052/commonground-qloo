@@ -1,6 +1,9 @@
 // A portable HTTP boundary shared by hosted Worker tests and production.
 export function createWorkerHandler({ assets, QlooClient, AppError }) {
-  let client, configuredKey, active = 0;
+  // Workers bind promises, timers and fetches to the request that created them.
+  // Reuse only completed JSON data; never carry a client's queue/inflight promises
+  // into another invocation. Expiring leases also survive canceled invocations.
+  let configuredKey, resultCache = new Map(), activeLease = null;
   const recent = new Map();
   const headers = { 'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff', 'Referrer-Policy': 'no-referrer' };
   const json = (data, status = 200) => Response.json(data, { status, headers });
@@ -29,19 +32,23 @@ export function createWorkerHandler({ assets, QlooClient, AppError }) {
         for (const chunk of chunks) { bytes.set(chunk, offset); offset += chunk.byteLength; }
         let state;
         try { state = JSON.parse(new TextDecoder().decode(bytes)); } catch { return json({ error: 'Send valid JSON.' }, 400); }
-        if (active >= 1) return json({ error: 'A negotiation is in progress. Please retry shortly.' }, 429);
+        if (activeLease && activeLease.until > Date.now()) return json({ error: 'A negotiation is in progress. Please retry shortly.' }, 429);
         const ip = request.headers.get('cf-connecting-ip');
         if (ip && (recent.get(ip) || 0) > Date.now() - 10000) return json({ error: 'Please wait 10 seconds between negotiations.' }, 429);
         if (ip) {
           if (recent.size > 256) recent.delete(recent.keys().next().value);
           recent.set(ip, Date.now());
         }
-        if (!client || configuredKey !== env.QLOO_API_KEY) {
+        if (configuredKey !== env.QLOO_API_KEY) {
           configuredKey = env.QLOO_API_KEY;
-          client = new QlooClient({ apiKey: env.QLOO_API_KEY });
+          resultCache = new Map();
         }
-        active++;
-        try { return json(await client.negotiate(state)); } finally { active--; }
+        const client = new QlooClient({ apiKey: env.QLOO_API_KEY });
+        client.cache = resultCache;
+        const lease = { until: Date.now() + 95000 };
+        activeLease = lease;
+        try { return json(await client.negotiate(state)); }
+        finally { if (activeLease === lease) activeLease = null; }
       }
       if (request.method !== 'GET' && request.method !== 'HEAD') return json({ error: 'Method not allowed.' }, 405);
       const asset = Object.hasOwn(assets, url.pathname) ? assets[url.pathname] : null;
